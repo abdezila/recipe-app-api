@@ -97,10 +97,20 @@ class Event(models.Model):
     description = models.TextField()
     location = models.CharField(max_length=255)
     
-
-
     start_date = models.DateField()
     end_date = models.DateField()
+    topics = models.ManyToManyField('Topic')
 
     def __str__(self):
         return self.title
+    
+class Topic(models.Model):
+    """Topic object"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name

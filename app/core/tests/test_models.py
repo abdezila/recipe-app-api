@@ -92,3 +92,10 @@ class ModelTests(TestCase):
         file_path = models.recipe_image_file_path(None, 'example.jpg')
 
         self.assertEqual(file_path, f'uploads/recipe/{uuid}.jpg')
+
+    def test_create_topic(self):
+        """Test creating a topic is successful."""
+        user = create_user()
+        topic = models.Topic.objects.create(user=user, name = 'Topic1')
+
+        self.assertEqual(str(topic), topic.name)
