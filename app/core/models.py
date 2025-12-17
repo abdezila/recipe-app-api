@@ -42,12 +42,11 @@ class User(AbstractBaseUser,PermissionsMixin):
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    Affiliaton = models.CharField(max_length=255, null=True)
+    background_user = models.TextField(blank=True, null=True)
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-
-
 class Recipe(models.Model):
     """Recipe objects."""
     user = models.ForeignKey(
@@ -87,3 +86,21 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Event(models.Model):
+    """Event object"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    location = models.CharField(max_length=255)
+    
+
+
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    def __str__(self):
+        return self.title
