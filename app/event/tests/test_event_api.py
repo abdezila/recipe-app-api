@@ -38,10 +38,33 @@ class PublicEventAPITests(TestCase):
     
     def setUp(self):
         self.client = APIClient()
+        self.user = create_user(email = 'user@example.com', password = 'pass123')
 
-    def test_auth_required(self):
-        """Test auth is required to call API"""
+    def test_public_can_list_events(self):
+        """Test public can list events"""
         res = self.client.get(EVENTS_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_public_can_view_event_detail(self):
+        """Test user see detail of events."""
+        event = create_event(user = self.user)
+
+        url  = detail_url(event.id)
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_auth_required_to_create_event(self):
+        """Test to required authenticate user."""
+        payload = {
+            'title':'Sample event',
+            'location':'ainsmara',
+            'start_date':date(2025,12,30),
+            'description': 'This is a description', 
+            'end_date': date(2025, 12, 31),
+        }
+        res = self.client.post(EVENTS_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -65,20 +88,7 @@ class PrivateEventAPITests(TestCase):
         serializer = EventSerializer(events, many=True)
         self.assertEqual(res.data, serializer.data)
 
-    def test_event_list_limited_to_user(self):
-        """Test list of events is limited to authenticated user."""
-        other_user = create_user(email = 'other@example.com', password = 'password123')
-        create_event(user = other_user)
-        create_event(user = other_user)
-
-        res = self.client.get(EVENTS_URL)
-
-        events = Event.objects.filter(user = self.user)
-        serializer = EventSerializer(events, many = True)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
-
-    def test_get_recipe_detail(self):
+    def test_get_event_detail(self):
         """Test get event detail."""
         event = create_event(user = self.user)
 

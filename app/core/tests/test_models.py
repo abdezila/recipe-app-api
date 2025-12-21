@@ -96,6 +96,6 @@ class ModelTests(TestCase):
     def test_create_topic(self):
         """Test creating a topic is successful."""
         user = create_user()
-        topic = models.Topic.objects.create(user=user, name = 'Topic1')
+        topic = models.Topic.objects.create(name = 'Topic1')
 
         self.assertEqual(str(topic), topic.name)

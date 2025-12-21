@@ -106,10 +106,6 @@ class Event(models.Model):
     
 class Topic(models.Model):
     """Topic object"""
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-    )
     name = models.CharField(max_length=255)
 
     def __str__(self):
