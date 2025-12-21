@@ -34,7 +34,7 @@ class EventViewSet(viewsets.ModelViewSet):
         """Custom permissions."""
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAuthenticated()]
+        return [IsAdminUser()]
 
     def get_serializer_class(self):
         """Return the serializer class for request."""

@@ -33,6 +33,10 @@ def create_user(**params):
     """Create and return a new user."""
     return get_user_model().objects.create_user(**params)
 
+def create_admin_user(**params):
+    """Create and return admin user."""
+    return get_user_model().objects.create_superuser(**params)
+
 class PublicEventAPITests(TestCase):
     """Test unauthenticated API requests."""
     
@@ -98,8 +102,8 @@ class PrivateEventAPITests(TestCase):
         serializer = EventDetailSerializer(event)
         self.assertEqual(res.data, serializer.data)
 
-    def test_create_event(self):
-        """Test creating a event."""
+    def test_user_cannot_create_event(self):
+        """Authenticated non-admin user cannot create events."""
         payload = {
             'title':'Sample event',
             'location':'ainsmara',
@@ -107,67 +111,27 @@ class PrivateEventAPITests(TestCase):
             'description': 'This is a description', 
             'end_date': date(2025, 12, 31),
         }
+
         res = self.client.post(EVENTS_URL, payload)
-        
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        event = Event.objects.get(id = res.data['id'])
-        for k,v in payload.items():
-            self.assertEqual(getattr(event,k), v)
-        self.assertEqual(event.user, self.user)
 
-    def test_partial_update(self):
-        """Test partial update of a event."""
-        event = create_event(
-            user = self.user,
-            title = 'Sample title',
-            location = 'ainsmara',
-            description = 'wwoow bro',
-            start_date = date(2025,12,30),
-            end_date = date(2025, 12, 31),
-        )
-        payload = {'title':'New event title'}
-        url = detail_url(event.id)
-        res =self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        event.refresh_from_db()
-        self.assertEqual(event.title, payload['title'])
-        self.assertEqual(event.user, self.user)
-
-    def test_full_update(self):
-        """Test full update of event."""
-        event = create_event(
-            user = self.user,
-            title = 'Sample title',
-            location = 'ainsmara',
-            description = 'wwoow bro',
-            start_date = date(2025,12,30),
-            end_date = date(2025, 12, 31),
-        )
-
-        payload = {
-            'title' : 'Sample title',
-            'location' : 'ainsmara',
-            'description' : 'wwoow bro',
-            'start_date' : date(2025,12,30),
-            'end_date' : date(2025, 12, 31),
-        }
+    def test_user_cannot_update_event(self):
+        """Authenticated non-admin user cannot update event."""
+        event = create_event(user = self.user)
+        payload = {'title': 'Hacked title'}
 
         url = detail_url(event.id)
-        res = self.client.put(url , payload)
+        res = self.client.patch(url, payload)
 
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        event.refresh_from_db()
-        for k,v in payload.items():
-            self.assertEqual(getattr(event,k), v)
-        self.assertEqual(event.user, self.user)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_delete_event(self):
-        """Test deleting a event successful."""
+    def test_user_cannot_delete_event(self):
+        """Authenticated non-admin user cannot delete event."""
         event = create_event(user = self.user)
 
         url = detail_url(event.id)
         res = self.client.delete(url)
 
-        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Event.objects.filter(id=event.id).exists())
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        
