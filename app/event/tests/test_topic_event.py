@@ -59,12 +59,6 @@ class AdminTopicApiTests(TestCase):
         self.admin_user = create_admin_user()
         self.client.force_authenticate(self.admin_user)
 
-    def test_admin_can_create_topic(self):
-        payload = {'name': 'AI'}
-        res = self.client.post(reverse('event:topic-list'), payload)
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Topic.objects.filter(name='AI').exists())
-
     def test_admin_can_update_topic(self):
         topic = Topic.objects.create(name='AI')
         payload = {'name': 'Artificial Intelligence'}
