@@ -13,9 +13,14 @@ from event.serializers import (EventSerializer,
 
 TOPICS_URL = reverse('event:topic-list')
 
-def create_user(email = 'user@example.com', password = 'testpass123', is_staff = False):
+def create_user(email = 'user@example.com', password = 'testpass123'):
     """Create and return a user."""
-    return get_user_model().objects.create_user(email = email, password = password, is_staff = is_staff)
+    return get_user_model().objects.create_user(email = email, password = password)
+
+def create_admin_user(email = 'admin@example.com', password = 'admin123'):
+    """Create and return a admin user."""
+    return get_user_model().objects.create_superuser(email= email, password= password)
+
 
 def detail_url(topic_id):
     """Create and return specific url."""
@@ -46,24 +51,32 @@ class PublicTopicsApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-class PrivateTopicsApiTests(TestCase):
-    """Test authenticated API requests."""
-
+class AdminTopicApiTests(TestCase):
+    """Test admin CRUD actions for topics."""
+    
     def setUp(self):
         self.client = APIClient()
-        self.admin_user = create_user(
-            email= 'admin@example.com',
-            password= 'admin1234',
-            is_staff  = True,
-        )
+        self.admin_user = create_admin_user()
         self.client.force_authenticate(self.admin_user)
-    
+
     def test_admin_can_create_topic(self):
-        """Create topic by admin."""
         payload = {'name': 'AI'}
-
-        res = self.client.post(TOPICS_URL, payload)
-
+        res = self.client.post(reverse('event:topic-list'), payload)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Topic.objects.filter(name = 'AI').exists())
- 
+        self.assertTrue(Topic.objects.filter(name='AI').exists())
+
+    def test_admin_can_update_topic(self):
+        topic = Topic.objects.create(name='AI')
+        payload = {'name': 'Artificial Intelligence'}
+        url = reverse('event:topic-detail', args=[topic.id])
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        topic.refresh_from_db()
+        self.assertEqual(topic.name, payload['name'])
+
+    def test_admin_can_delete_topic(self):
+        topic = Topic.objects.create(name='AI')
+        url = detail_url(topic.id)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Topic.objects.filter(id=topic.id).exists())

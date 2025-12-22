@@ -134,4 +134,64 @@ class PrivateEventAPITests(TestCase):
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        
+    
+class AdminEventAPITests(TestCase):
+    """Test for admin user"""
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = create_admin_user(
+            email = 'admin@example.com',
+            password = 'admin123',
+        )
+        self.client.force_authenticate(self.admin_user)
+
+def test_admin_create_event(self):
+    """Test admin can create an event"""
+    payload = {
+        'title': 'Admin Event',
+        'location': 'AinSmara',
+        'start_date': '2025-12-30',
+        'description': 'Created by admin',
+        'end_date': '2025-12-31',
+        'topics': [{'name': 'AI'}, {'name': 'Cybersecurity'}],  # Add topics to the payload
+    }
+
+    res = self.client.post(EVENTS_URL, payload)
+    print(res.data)  # Check the error response for more details
+
+    self.assertEqual(res.status_code, status.HTTP_201_CREATED)  # Verify that status is 201
+
+
+    def test_admin_can_partial_update_event(self):
+        """Admin can partially update an event."""
+        event = create_event(user=self.admin_user)
+        payload = {'title': 'Updated by admin'}
+
+        url = detail_url(event.id)
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        event.refresh_from_db()
+        self.assertEqual(event.title, payload['title'])
+
+    def test_admin_can_full_update_event(self):
+        """Test admin can fully update an event."""
+        event = create_event(user=self.admin_user)
+        payload = {
+            'title': 'Updated Event',
+            'location': 'New Location',
+            'start_date': '2025-12-30',
+            'description': 'Updated by admin',
+            'end_date': '2025-12-31',
+            'topics': [{'name': 'AI'}, {'name': 'Cybersecurity'}],  # Add topics to the payload
+        }
+
+        url = detail_url(event.id)
+        res = self.client.put(url, payload)
+        print(res.data)  # Check the error response for more details
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)  # Verify that status is 200 (updated)
+
+
+    
+
