@@ -83,19 +83,3 @@ class ModelTests(TestCase):
         )
 
         self.assertEqual(str(ingredient), ingredient.name)
-
-    @patch('core.models.uuid.uuid4')
-    def test_recipe_file_name_uuid(self, mock_uuid):
-        """Test generating image path."""
-        uuid = 'Test-uuid'
-        mock_uuid.return_value = uuid
-        file_path = models.recipe_image_file_path(None, 'example.jpg')
-
-        self.assertEqual(file_path, f'uploads/recipe/{uuid}.jpg')
-
-    def test_create_topic(self):
-        """Test creating a topic is successful."""
-        user = create_user()
-        topic = models.Topic.objects.create(name = 'Topic1')
-
-        self.assertEqual(str(topic), topic.name)
