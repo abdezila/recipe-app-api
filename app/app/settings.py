@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'user',
     'recipe',
     'event',
+    'paper',
 ]
 
 MIDDLEWARE = [
