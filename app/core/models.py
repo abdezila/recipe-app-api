@@ -56,6 +56,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     affiliation = models.CharField(max_length=255, null=True)
     background_user = models.TextField(blank=True, null=True)
+    phone_number = models.CharField(max_length=10, blank= True)
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

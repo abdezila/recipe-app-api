@@ -28,12 +28,13 @@ class TopicViewSet(viewsets.GenericViewSet,
     """View for managing global topics."""
     queryset = Topic.objects.all().order_by('-name')
     serializer_class = serializers.TopicSerializer
+    authentication_classes = [TokenAuthentication]
 
     def get_permissions(self):
         """Public can read topics, and only admin users can create/update/delete."""
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAdminUser(),IsAuthenticated()]
+        return [IsAdminUser()]
 
 @extend_schema_view(
     list = extend_schema(
