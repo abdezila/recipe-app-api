@@ -1,6 +1,14 @@
 """Serializers for event APIs"""
 from rest_framework import serializers
-from core.models import Event, Topic
+from core.models import (Event,
+                         Topic,
+                         EventRegistration,)
+
+REGISTRATION_PRICES = {
+    "general": 15000,
+    "student": 8000,
+    "workshop": 25000,
+}
 
 class TopicSerializer(serializers.ModelSerializer):
     """Serializer for Topics"""
@@ -60,3 +68,57 @@ class EventDetailSerializer(EventSerializer):
     """Serializer for event detail view."""
     class Meta(EventSerializer.Meta):
         fields = EventSerializer.Meta.fields + ['description']
+
+class EventRegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for event registration"""
+    class Meta:
+        model = EventRegistration
+        fields = [
+            "id",
+            "user",
+            "event",
+            "plan",
+            "price",
+            "payment_status",
+            "attended",
+            "can_download_attestation",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "user",
+            "event",
+            "price",
+            "created_at",
+        ]
+
+    def validate_plan(self, value):
+        REGISTRATION_PRICES = {
+            "general": 15000,
+            "student": 8000,
+            "workshop": 25000,
+        }
+        if value not in REGISTRATION_PRICES:
+            raise serializers.ValidationError("Invalid plan.")
+        return value
+
+    def create(self, validated_data):
+        request = self.context["request"]
+        event = self.context["event"]
+
+        if EventRegistration.objects.filter(user=request.user, event=event).exists():
+            raise serializers.ValidationError("Already registered.")
+
+        price = {
+            "general": 15000,
+            "student": 8000,
+            "workshop": 25000,
+        }[validated_data["plan"]]
+
+        return EventRegistration.objects.create(
+            user=request.user,
+            event=event,
+            plan=validated_data["plan"],
+            price=price,
+        )
+
