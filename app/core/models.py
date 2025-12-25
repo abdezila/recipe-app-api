@@ -135,3 +135,42 @@ class Paper(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.author.email}"
+
+
+class EventRegistration(models.Model):
+    """Represents a user's registration to an event"""
+
+    class RegistrationPlan(models.TextChoices):
+        GENERAL = "general", "General Participant"
+        STUDENT = "student", "Student"
+        WORKSHOP = "workshop", "Workshop Participant"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+    )
+
+    plan = models.CharField(
+        max_length=30,
+        choices=RegistrationPlan.choices
+    )
+
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        help_text="Price at the time of registration"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "event")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user} → {self.event} ({self.plan})"
