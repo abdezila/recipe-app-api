@@ -1,4 +1,8 @@
 """Views for the event APIs."""
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
 from drf_spectacular.utils import (
     extend_schema_view,
     extend_schema,
@@ -10,13 +14,15 @@ from rest_framework import (
     mixins,
     )
 from rest_framework.authentication import TokenAuthentication
+from event.permissions import CanRegisterToEvent
 from rest_framework.permissions import (IsAuthenticated,
                                         AllowAny,
                                         IsAdminUser,)
 
 from core.models import (
     Event,
-    Topic
+    Topic,
+    EventRegistration,
 )
 from event import serializers
 
@@ -57,12 +63,19 @@ class EventViewSet(viewsets.ModelViewSet):
         """Custom permissions."""
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
+        
+        if self.action in ['register', 'cancel_registration', 'my_registration']:
+            return [IsAuthenticated(), CanRegisterToEvent()]
+        
         return [IsAdminUser()]
 
     def get_serializer_class(self):
         """Return the serializer class for request."""
         if self.action == 'list':
             return serializers.EventSerializer
+        
+        if self.action in ['register', 'my_registration']:
+            return serializers.EventRegistrationSerializer
         
         return self.serializer_class
 
@@ -84,3 +97,59 @@ class EventViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(topics__id__in = topic_ids)
 
         return queryset.order_by('-id').distinct()
+    
+    @action(methods=['POST'], detail=True, url_path='register')
+    def register(self, request, pk=None):
+        """Register the current user to this event."""
+        event = self.get_object()
+
+        serializer = self.get_serializer(
+            data=request.data,
+            context={'request': request, 'event': event}
+        )
+        serializer.is_valid(raise_exception=True)
+        registration = serializer.save()
+
+        return Response(
+            serializers.EventRegistrationSerializer(registration).data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+    @register.mapping.delete
+    def cancel_registration(self, request, pk=None):
+        """Cancel the current user's registration for this event."""
+        event = self.get_object()
+
+        deleted, _ = EventRegistration.objects.filter(
+            user=request.user,
+            event=event
+        ).delete()
+
+        if deleted == 0:
+            return Response(
+                {'detail': 'You are not registered for this event.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    @action(methods=['GET'], detail=True, url_path='my-registration')
+    def my_registration(self, request, pk=None):
+        """Get the current user's registration for this event (React state)."""
+        event = self.get_object()
+
+        registration = EventRegistration.objects.filter(
+            user=request.user,
+            event=event
+        ).first()
+
+        if not registration:
+            return Response(
+                {'detail': 'Not registered.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = serializers.EventRegistrationSerializer(registration)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -79,9 +79,6 @@ class EventRegistrationSerializer(serializers.ModelSerializer):
             "event",
             "plan",
             "price",
-            "payment_status",
-            "attended",
-            "can_download_attestation",
             "created_at",
         ]
         read_only_fields = [
