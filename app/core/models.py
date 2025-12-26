@@ -198,5 +198,14 @@ class EventRegistration(models.Model):
     def __str__(self):
         return f"{self.user} → {self.event} ({self.plan})"
 
-from django.db import models
+class ContactUs(models.Model):
+    """ContactUs object."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
 
+    def __str__(self):
+        return self.subject
