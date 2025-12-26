@@ -173,3 +173,34 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.user} → {self.event} ({self.plan})"
+
+from django.db import models
+
+class EventSchedule(models.Model):
+    event = models.ForeignKey(
+        "Event",
+        on_delete=models.CASCADE,
+        related_name="schedules"
+    )
+
+    order = models.PositiveSmallIntegerField(
+        help_text="Order of the day (1 = first day, 2 = second day, etc.)"
+    )
+
+    title = models.CharField(
+        max_length=100,
+        help_text="Day title (e.g. Day 1, Opening Day)"
+    )
+
+    date = models.DateField()
+
+    details = models.TextField(
+        help_text="Summary of activities for this day"
+    )
+
+    class Meta:
+        unique_together = ("event", "order")
+        ordering = ["event", "order"]
+
+    def __str__(self):
+        return f"{self.event.title} - {self.title}"
