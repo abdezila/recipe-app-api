@@ -7,7 +7,7 @@ class CanRegisterToEvent(BasePermission):
     """Allows author and participant register to Event Registration."""
     def has_permission(self, request, view):
         user = request.user
-        if not user or user.is_authenticated:
+        if not user or not user.is_authenticated:
             return False
         
-        return user.role in (user.Role.AUTHOR or user.Role.PARTICIPANT)
+        return user.role in (user.Role.AUTHOR, user.Role.PARTICIPANT)
