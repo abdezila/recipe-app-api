@@ -74,6 +74,12 @@ class EventViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return serializers.EventSerializer
         
+        if self.action in ['create', 'update', 'partial_update']:
+            return serializers.EventSerializer
+        
+        if self.action == 'retrieve':
+            return serializers.EventDetailSerializer
+        
         if self.action in ['register', 'my_registration']:
             return serializers.EventRegistrationSerializer
         

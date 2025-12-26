@@ -2,13 +2,22 @@
 from rest_framework import serializers
 from core.models import (Event,
                          Topic,
-                         EventRegistration,)
+                         EventRegistration,
+                         EventSchedule,)
 
 REGISTRATION_PRICES = {
     "general": 15000,
     "student": 8000,
     "workshop": 25000,
 }
+
+class EventScheduleSerializer(serializers.ModelSerializer):
+    """Serializer for EventSchedule."""
+    class Meta:
+        model = EventSchedule
+        fields = ["title", "date", "details"]
+
+
 
 class TopicSerializer(serializers.ModelSerializer):
     """Serializer for Topics"""
@@ -21,42 +30,64 @@ class EventSerializer(serializers.ModelSerializer):
     topics = TopicSerializer(many=True, required=False, write_only=True)
     topics_detail = serializers.SerializerMethodField()
 
+    schedules = EventScheduleSerializer(many=True, required=False, write_only=True)
+    schedules_detail = serializers.SerializerMethodField()
+
     class Meta:
         model = Event
         fields = [
-            'id',
-            'title',
-            'location',
-            'start_date',
-            'end_date',
-            'topics',
-            'topics_detail',
+            "id",
+            "title",
+            "location",
+            "start_date",
+            "end_date",
+            "topics",
+            "topics_detail",
+            "schedules",
+            "schedules_detail",
         ]
-        read_only_fields = ['id']
+        read_only_fields = ["id"]
 
     def get_topics_detail(self, obj):
         return TopicSerializer(obj.topics.all(), many=True).data
 
+    def get_schedules_detail(self, obj):
+        return EventScheduleSerializer(obj.schedules.all().order_by("date"), many=True).data
+
     def _get_or_create_topics(self, topics, event):
         for topic in topics:
-            topic_obj, _ = Topic.objects.get_or_create(
-                name=topic['name']
-            )
+            topic_obj, _ = Topic.objects.get_or_create(name=topic["name"])
             event.topics.add(topic_obj)
-    
+
+    def _create_schedules(self, schedules, event):
+        for s in schedules:
+            EventSchedule.objects.create(
+                event=event,
+                title=s["title"],
+                date=s["date"],
+                details=s.get("details", ""),
+            )
+
     def create(self, validated_data):
-        """Create a new event."""
-        topics = validated_data.pop('topics', [])
+        topics = validated_data.pop("topics", [])
+        schedules = validated_data.pop("schedules", [])
+
         event = Event.objects.create(**validated_data)
         self._get_or_create_topics(topics, event)
+        self._create_schedules(schedules, event)
         return event
-    
+
     def update(self, instance, validated_data):
-        """Update an event."""
-        topics = validated_data.pop('topics', None)
+        topics = validated_data.pop("topics", None)
+        schedules = validated_data.pop("schedules", None)
+
         if topics is not None:
             instance.topics.clear()
             self._get_or_create_topics(topics, instance)
+
+        if schedules is not None:
+            instance.schedules.all().delete()
+            self._create_schedules(schedules, instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
